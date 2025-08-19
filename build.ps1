@@ -105,13 +105,18 @@ exit /b 0
 '@ | Set-Content -LiteralPath (Join-Path $PyDir "run.bat") -Encoding ASCII
 }
 
+# seed a proper starter context if none exists (UTF-8 without BOM)
 $DemoCtx = Join-Path $FilesRoot "x00001.txt"
 if (-not (Test-Path -LiteralPath $DemoCtx)) {
-@'
-# title: demo context
-r01 0001 = print("hello")
-'@ | Set-Content -LiteralPath $DemoCtx -Encoding UTF8
+  $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+  $content = @"
+x00001 (demo context){
+`t0001`tprint("hello")
 }
+"@
+  [System.IO.File]::WriteAllText($DemoCtx, $content, $utf8NoBom)
+}
+
 
 # ---- Compile ---------------------------------------------------------------
 $SRC = Join-Path $ROOT "scripted.cpp"

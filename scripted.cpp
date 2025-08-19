@@ -1,6 +1,7 @@
 // scripted.cpp — CLI REPL using shared core + new plugin Kernel
 // g++ -std=c++23 -O2 scripted.cpp -o scripted.exe
 #include <iostream>
+#include <memory>
 #include "scripted_core.hpp"
 #include "scripted_kernel.hpp" // NEW
 

@@ -172,11 +172,20 @@ struct Workspace {
 // ----------------------------- Parsing & I/O -----------------------------
 struct ParseResult { bool ok=true; string err; };
 
-inline ParseResult parseBankText(const string& text, const Config& cfg, Bank& outBank) {
-    std::vector<string> lines;
+inline ParseResult parseBankText(const std::string& text, const Config& cfg, Bank& outBank) {
+    // Strip UTF-8 BOM if present
+    std::string content = text;
+    if (content.size() >= 3 &&
+        static_cast<unsigned char>(content[0]) == 0xEF &&
+        static_cast<unsigned char>(content[1]) == 0xBB &&
+        static_cast<unsigned char>(content[2]) == 0xBF) {
+        content.erase(0, 3);
+    }
+
+    std::vector<std::string> lines;
     {
-        std::istringstream is(text);
-        string line;
+        std::istringstream is(content);
+        std::string line;
         while (std::getline(is, line)) lines.push_back(line);
     }
     if (lines.empty()) return {false, "empty file"};
@@ -218,7 +227,8 @@ inline ParseResult parseBankText(const string& text, const Config& cfg, Bank& ou
         if (s.find('}')!=string::npos) break;
         if (trim(s).empty()) continue;
 
-        if (!s.empty() && s[0] != '\t'){
+        // treat both TAB and SPACE as indentation for address lines
+        if (!s.empty() && s[0] != '\t' && s[0] != ' ') {
             long long regId;
             if (!parseIntBase(trim(s), cfg.base, regId)){
                 return {false, "invalid register line: " + trim(s)};
@@ -459,6 +469,7 @@ inline void saveConfig(const Paths& P, const Config& cfg){
     out << cfg.toJSON();
 }
 
+
 // ----------------------------- Utility ops used by CLI/GUI -----------------------------
 // --- openCtx: load-or-create without testing writability ------------------
 inline bool openCtx(const Config& cfg,
@@ -494,8 +505,18 @@ inline bool openCtx(const Config& cfg,
         return true;
     }
 
-    // New (empty) bank if file doesn't exist
+    // New (empty) bank if file doesn't exist — write a valid file if possible
+    b.id    = id;
     b.title = stem;
+
+    std::string err;
+    if (!saveContextFile(cfg, path, b, err)) {
+        // Folder might be read-only; keep going with in-memory bank
+        ws.banks[id] = std::move(b);
+        status = "Created new context (not written): " + path.string() + " — " + err;
+        return true;
+    }
+
     ws.banks[id] = std::move(b);
     status = "Created new context: " + path.string();
     return true;
