@@ -21,7 +21,6 @@ $incFile  = Join-Path $bin "files\hello.txt"
 Remove-Item -LiteralPath $resPath  -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $jsonPath -ErrorAction SilentlyContinue
 Remove-Item -LiteralPath $ctxPath  -ErrorAction SilentlyContinue
-# Ensure include file exists
 Set-Content -LiteralPath $incFile -Encoding ASCII -Value "INCLUDED"
 
 # Drive CLI

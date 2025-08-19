@@ -183,67 +183,61 @@ struct Kernel {
             return false;
         }
 
-        // --- Build command and execute
+        // --- Build command and execute (Windows) ---
         int ec = 0;
 
-    #ifdef _WIN32
-        auto q = [](const std::string& s){
-            std::string r; r.reserve(s.size() + 2);
-            r.push_back('"');
-            for (char c : s) {
-                if (c == '"') r += "\\\"";
-                else r.push_back(c);
-            }
-            r.push_back('"');
-            return r;
-        };
+        #ifdef _WIN32
+            auto dq = [](const std::string& s){ return "\"" + s + "\""; };
 
-        // Build the inner command FIRST, then wrap it in one quoted string for cmd.exe
-        const std::string inner =
-            q(entryPath.string()) + " " +
-            q(inputFile.string()) + " " +
-            q(absOutdir.string()) + " > " +
-            q(logFile.string())   + " 2> " +
-            q(errFile.string());
+            // Build the inner command with plain quotes
+            const std::string inner =
+                dq(entryPath.string()) + " " +
+                dq(inputFile.string()) + " " +
+                dq(absOutdir.string()) + " > " +
+                dq(logFile.string())   + " 2> " +
+                dq(errFile.string());
 
-        // /S improves quote handling; /C executes then exits
-        const std::string cmd = std::string("cmd.exe /S /C ") + q(inner);
+            // Wrap with ONE outer pair of quotes for /S /C
+            const std::string cmd = std::string("cmd.exe /S /C ") + "\"" + inner + "\"";
 
-        // Breadcrumb for easy debugging
-        writeTextFile(absOutdir / "run.cmd", std::string("@echo off\r\n") + cmd + "\r\n");
+            // Breadcrumb (so you can run it by hand)
+            writeTextFile(absOutdir / "run.cmd", std::string("@echo off\r\n") + cmd + "\r\n");
 
-        ec = std::system(cmd.c_str());
-
-    #else
-        auto q = [](const std::string& s){ return "'" + s + "'"; };
-        const std::string inner =
-            "\"" + entryPath.string() + "\" " +
-            "\"" + inputFile.string() + "\" " +
-            "\"" + absOutdir.string() + "\" > " +
-            "\"" + logFile.string()   + "\" 2> " +
-            "\"" + errFile.string()   + "\"";
-        const std::string cmd = std::string("/bin/sh -c ") + q(inner);
-        ec = std::system(cmd.c_str());
-    #endif
+            // Execute
+            //int ec = std::system(cmd.c_str());
+            ec = std::system(cmd.c_str());
+        #else
+            // --- POSIX branch unchanged (already fine) ---
+            auto sq = [](const std::string& s){ return "'" + s + "'"; };
+            const std::string inner =
+                "\"" + entryPath.string() + "\" " +
+                "\"" + inputFile.string() + "\" " +
+                "\"" + absOutdir.string() + "\" > " +
+                "\"" + logFile.string()   + "\" 2> " +
+                "\"" + errFile.string()   + "\"";
+            const std::string cmd = std::string("/bin/sh -c ") + sq(inner);
+            ec = std::system(cmd.c_str());
+        #endif
 
         // Read plugin output/report
-        string outj;
-        if (!readTextFile(outputFile, outj)) {
-            string errtxt; (void)readTextFile(errFile, errtxt);
+        std::string outContent;
+        if (!readTextFile(outputFile, outContent)) {
+            std::string errtxt; (void)readTextFile(errFile, errtxt);
             out_report = "Plugin did not produce output.json. Exit=" + std::to_string(ec) +
-                         (errtxt.empty() ? "" : ("\nerr:\n" + errtxt));
+                        (errtxt.empty() ? "" : ("\nerr:\n" + errtxt));
             return false;
         }
-        out_json = outj;
+        out_json = std::move(outContent);
 
-        string logtxt; (void)readTextFile(logFile, logtxt);
-        string errtxt; (void)readTextFile(errFile, errtxt);
+        std::string logtxt; (void)readTextFile(logFile, logtxt);
+        std::string errtxt; (void)readTextFile(errFile, errtxt);
         std::ostringstream rep;
         rep << "exit=" << ec << "\n";
         if (!logtxt.empty()) rep << "log:\n" << logtxt << "\n";
         if (!errtxt.empty()) rep << "stderr:\n" << errtxt << "\n";
         out_report = rep.str();
         return true;
+
     }
 };
 
