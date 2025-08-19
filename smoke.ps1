@@ -1,47 +1,85 @@
-# smoke.ps1 — verify the resolver end-to-end using the resolved text file
+# smoke.ps1 — resolver + export smoke test (PS 5.1 safe)
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $bin  = Join-Path $root 'bin'
-$ctx  = 'x90011'
+$exe  = Join-Path $bin 'cli-script.exe'
 
-# fresh start
-Remove-Item (Join-Path $bin "files\$ctx.txt") -ErrorAction SilentlyContinue
-Remove-Item (Join-Path $bin "files\out\$ctx.resolved.txt") -ErrorAction SilentlyContinue
+if (-not (Test-Path -LiteralPath $exe)) {
+  Write-Host "FAILED: missing $exe (run .\build.ps1 -Release)"
+  exit 1
+}
 
-# drive the CLI non-interactively
+# Test context and artifacts
+$ctx = 'x98001'
+$resPath  = Join-Path $bin "files\out\$ctx.resolved.txt"
+$jsonPath = Join-Path $bin "files\out\$ctx.json"
+$ctxPath  = Join-Path $bin "files\$ctx.txt"
+$incFile  = Join-Path $bin "files\hello.txt"
+
+# Clean slate
+Remove-Item -LiteralPath $resPath  -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $jsonPath -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath $ctxPath  -ErrorAction SilentlyContinue
+# Ensure include file exists
+Set-Content -LiteralPath $incFile -Encoding ASCII -Value "INCLUDED"
+
+# Drive CLI
 $cmd = @"
 :open $ctx
-:ins 0001 hello
+:ins 0001 alpha
 :insr 02 0000 $ctx.01.0001
+:insr 02 0002 @file(hello.txt)
 :w
 :resolve
+:export
+:r files/out/$ctx.resolved.txt
+:show
 :q
 "@
 
 Push-Location $bin
 try {
-  $null = $cmd | .\cli-script.exe
-} finally {
-  Pop-Location
-}
+  $out = $cmd | .\cli-script.exe
+  $out | Write-Host
+} finally { Pop-Location }
 
-# read the resolved artifact and assert the value actually resolved
-$resFile = Join-Path $bin "files\out\$ctx.resolved.txt"
-if (-not (Test-Path $resFile)) {
-  Write-Host "FAILED (no resolved file): $resFile"
+# Check resolved file
+if (-not (Test-Path -LiteralPath $resPath)) {
+  Write-Host "FAILED (no resolved file): $resPath"
   exit 1
 }
 
-$content = Get-Content -Raw $resFile
-# Look for the register-02 block and address 0000 resolved to 'hello'
-# (multiline regex: a line "02", then an indented "0000    hello")
-if ($content -match '(?m)^\s*02\s*\r?\n[ \t]+0000[ \t]+hello\b') {
-  Write-Host "OK"
-  exit 0
-} else {
-  Write-Host "FAILED"
-  Write-Host "---- resolved file ----"
+$content = Get-Content -Raw -LiteralPath $resPath
+
+# Expect: reg 02 has 0000 -> alpha (same-bank resolution)
+if ($content -notmatch '(?m)^\s*02\s*\r?\n[ \t]+0000[ \t]+alpha\b') {
+  Write-Host "FAILED: reg 02/0000 did not resolve to 'alpha'"
+  Write-Host "`n---- resolved file ----"
   Write-Host $content
   exit 1
 }
+
+# Expect: reg 02 has 0002 -> INCLUDED (from @file)
+if ($content -notmatch '(?m)^\s*02\s*\r?\n(?:.*\r?\n)*[ \t]+0002[ \t]+INCLUDED\b') {
+  Write-Host "FAILED: reg 02/0002 did not include 'INCLUDED'"
+  Write-Host "`n---- resolved file ----"
+  Write-Host $content
+  exit 1
+}
+
+# Check exported JSON parses
+if (-not (Test-Path -LiteralPath $jsonPath)) {
+  Write-Host "FAILED (no export JSON): $jsonPath"
+  exit 1
+}
+try {
+  $j = Get-Content -Raw -LiteralPath $jsonPath | ConvertFrom-Json
+} catch {
+  Write-Host "FAILED (export JSON not valid):"
+  Get-Content -Raw -LiteralPath $jsonPath
+  exit 1
+}
+
+Write-Host "OK"
+exit 0
