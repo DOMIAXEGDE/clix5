@@ -1,0 +1,22 @@
+:open x00001
+:switch x00001
+:ins 0001 print("hello Dominic :)")
+:insr 02 0000 x00001.01.0001 Test PASSED
+:w
+:resolve
+:export
+:show
+:q
+
+---
+
+:preload
+:switch x00001
+:ins 0001 hello
+:insr 02 0000 x00001.01.0001
+:w
+:resolve
+:export
+:r files/out/x00001.resolved.txt
+:show
+:q
