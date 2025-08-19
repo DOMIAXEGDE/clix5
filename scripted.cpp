@@ -20,33 +20,136 @@ struct Editor {
     void saveCfg() { saveConfig(P, cfg); }
     bool ensureCurrent() { if (!current) { std::cout << "No current context. Use :open <ctx>\n"; return false; } return true; }
 
-    void help() {
-        std::cout <<
-            R"(Commands:
+void help(){
+    std::cout <<
+R"(────────────────────────────────────────────────────────────────────────────
+scripted — Help / User Manual
+────────────────────────────────────────────────────────────────────────────
+Quick start
+  :open x00001                Create or open context x00001
+  :ins 0001 hello             Write to register 1, address 0001
+  :insr 02 0003 world         Write to register 2, address 0003
+  :show                       View current buffer
+  :w                          Save to files/x00001.txt
+  :resolve                    Write files/out/x00001.resolved.txt
+  :export                     Write files/out/x00001.json
+  :plugins                    List discovered code plugins
+  :plugin_run python 02 0003 {}  Run plugin over reg 02 addr 0003
+  :q                          Quit
+
+Commands
   :help                          Show this help
   :open <ctx>                    Open/create context (e.g., x00001)
-  :switch <ctx>                  Switch current context
+  :switch <ctx>                  Switch current context (loads if needed)
   :preload                       Load all banks in files/
   :ls                            List loaded contexts
   :show                          Print current buffer (header + addresses)
-  :ins <addr> <value...>         Insert/replace in register 1
+  :ins <addr> <value...>         Insert/replace into register 1
   :insr <reg> <addr> <value...>  Insert/replace into a specific register
   :del <addr>                    Delete from register 1
   :delr <reg> <addr>             Delete from a specific register
   :w                             Write current buffer to files/<ctx>.txt
-  :r <path>                      Read/merge a raw model snippet from a file
+  :r <path>                      Read/merge a bank file (same grammar as below)
   :resolve                       Write files/out/<ctx>.resolved.txt
   :export                        Write files/out/<ctx>.json
-  :set prefix <char>
-  :set base <n>
-  :set widths bank=5 addr=4 reg=2
-
+  :set prefix <char>             Set context prefix (default: x)
+  :set base <n>                  Set number base (10/16/…); affects parse & show
+  :set widths bank=5 addr=4 reg=2  Set zero-pad widths
   :plugins                       List discovered code plugins
   :plugin_run <name> <reg> <addr> [stdin.json|inlineJSON]
-
+                                Run a plugin on the selected cell
   :q                             Quit (prompts if dirty)
-)" << std::endl;
+
+Context file format (what :w writes, what :open/:r read)
+  Header + body in braces:
+    x00001 (demo context){
+        0001    Hello from R1
+    02
+        0003    World from R2
     }
+  Rules:
+    • First line: <prefix><bankId> (title){
+      - Example:  x00001 (demo context){
+      - Title is optional; braces are required.
+    • Body lines:
+      - A line WITHOUT leading space/tab begins a register block: e.g. "02"
+      - Indented lines (TAB or SPACE) are address/value entries:
+            <indent><addr><whitespace><value...>
+      - By default, entries go to register 1 until a register line appears.
+    • Encoding: UTF-8 (BOM optional; loader strips BOM).
+    • Indentation: TAB or SPACE are both accepted for address lines.
+
+Resolver syntax (inside values)
+  You can reference other cells; resolution is recursive with cycle checks.
+  Forms supported:
+    1) Numeric triad (bank.register.address) — any register:
+         1.2.3
+    2) Prefixed three-part (base-aware; uses current cfg.prefix):
+         x00001.02.0003
+    3) Same-bank shorthand (uses current bank; base-aware):
+         r02.0003
+    4) Two-part prefixed (bank.address) — always register 1:
+         x00001.0001
+  Missing targets show as: [Missing …]
+  Bad references show as: [BadRef …]
+  Circular refs show as:  [Circular Ref: …]
+
+Numbers, base, widths
+  • :set base N     — parsing of <reg> and <addr> follows the current base.
+  • :set widths …   — affects how :show and filenames zero-pad the ids.
+  • You can enter “02” in base 10 or “0A” in base 16, depending on :set base.
+
+Plugins (file-based, language-agnostic)
+  Discovery:
+    plugins/*/plugin.json with:
+      { "name": "<pluginName>", "entry_win": "run.bat", "entry_lin": "run.sh" }
+  Invocation:
+    :plugin_run <name> <reg> <addr> [stdin.json|inlineJSON]
+  Kernel writes for each run:
+    files/out/plugins/<ctx>/r<reg>a<addr>/<plugin>/
+      code.txt       — resolved value of the cell
+      input.json     — metadata + optional stdin object
+      output.json    — REQUIRED plugin result (written by the plugin)
+      run.log / run.err
+  Note: The working directory is the program’s CWD; place plugins/ at repo root
+        (or as staged by your build script) so Kernel discovery finds them.
+
+Typical session
+  :open x00001
+  :ins 0001 Hello
+  :insr 02 0003 World
+  :ins 0002 See r02.0003               # cross-register reference
+  :show
+  :w
+  :resolve
+  :export
+  :plugins
+  :plugin_run python 02 0003 {"note":"demo"}
+
+Troubleshooting
+  • “Parse failed: cannot parse bank id”
+      - File begins with a BOM or wrong header. Ensure first line is like:
+        x00001 (title){
+      - Our loader strips UTF-8 BOM; if hand-editing, save as UTF-8.
+  • “missing '{' after header”
+      - Header must be followed by “{” (on the same line or next line).
+  • “invalid register line: …”
+      - Address lines must be indented (TAB or SPACE). Non-indented lines
+        are treated as register ids (e.g. “02”).
+  • Values don’t resolve
+      - Use 1.2.3 or x00001.02.0003 (or r02.0003). x00001.0003 targets reg 1.
+      - Check :set base — your hex vs decimal digits must match.
+
+Paths & outputs
+  Input banks:      files/<ctx>.txt
+  Resolved text:    files/out/<ctx>.resolved.txt
+  Exported JSON:    files/out/<ctx>.json
+  Plugin outputs:   files/out/plugins/<ctx>/r<reg>a<addr>/<plugin>/output.json
+
+────────────────────────────────────────────────────────────────────────────
+)" << std::endl;
+}
+
 
     void listCtx() {
         if (ws.banks.empty()) { std::cout << "(no contexts)\n"; return; }

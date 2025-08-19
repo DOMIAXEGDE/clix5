@@ -6,3 +6,10 @@ Usage
 .\build.ps1 -Std c++20 -Run        # C++20
 .\build.ps1 -Release -Run -Static:$false   # dynamic runtime
 .\build.ps1 -Clean
+
+Test with build and run
+
+Test-Path .\scripted.cpp        # should be True
+Get-Item .\bin\ | Out-Null      # bin\ should exist after Ensure-Dir
+.\build.ps1 -Release            # should compile cleanly
+.\build.ps1 -Run                # should rebuild debug and run

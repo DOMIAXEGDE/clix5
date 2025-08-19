@@ -117,33 +117,46 @@ x00001 (demo context){
   [System.IO.File]::WriteAllText($DemoCtx, $content, $utf8NoBom)
 }
 
+$COMMON = @("-std=$Std","-Wall","-Wextra","-pedantic","-DNOMINMAX","-DWIN32_LEAN_AND_MEAN","-finput-charset=utf-8","-fexec-charset=utf-8")
+$DBG    = @("-O0","-g3")
+$REL    = @("-O2","-DNDEBUG","-s")
+if ($Static) { $REL += @("-static-libstdc++","-static-libgcc") }
+$CFLAGS = $COMMON + ($(if($Release){$REL}else{$DBG}))
 
-# ---- Compile ---------------------------------------------------------------
-$SRC = Join-Path $ROOT "scripted.cpp"
-$EXE = Join-Path $OUT "cli-script.exe"
-if (-not (Test-Path -LiteralPath $SRC)) { throw "Cannot find scripted.cpp at $SRC" }
+$LFLAGS = @()
+$needFs = ($Std -eq 'c++17') -and ($gccVer.Major -lt 9)
+if ($needFs) { $LFLAGS += "-lstdc++fs" }
 
+
+# --- compile ---------------------------------------------------------------
 Ensure-Dir $OUT
 Ensure-Dir (Join-Path $OUT "plugins")
 Ensure-Dir (Join-Path $OUT "files")
 Ensure-Dir (Join-Path $OUT "files\out")
 
-# Compile/link flags (put libraries at the END for GCC)
-$COMMON = @("-std=$Std","-Wall","-Wextra","-pedantic","-DNOMINMAX","-DWIN32_LEAN_AND_MEAN","-finput-charset=utf-8","-fexec-charset=utf-8")
-$DBG    = @("-O0","-g3")
-$REL    = @("-O2","-DNDEBUG","-s")
-if ($Static) { $REL += @("-static-libstdc++","-static-libgcc") }
+$SRC = Join-Path $ROOT "scripted.cpp"
+$EXE = Join-Path $OUT  "cli-script.exe"
 
-$CFLAGS = $COMMON + ($(if($Release){$REL}else{$DBG}))
-$LFLAGS = @()
+# Sanity prints
+Write-Host "[vars] ROOT=$ROOT"
+Write-Host "[vars] OUT =$OUT"
+Write-Host "[vars] SRC =$SRC"
+Write-Host "[vars] EXE =$EXE"
 
-# Old GCC + C++17 needs -lstdc++fs for <filesystem>
-$needFs = ($Std -eq 'c++17') -and ($gccVer.Major -lt 9)
-if ($needFs) { $LFLAGS += @("-lstdc++fs") }
+if (-not (Test-Path -LiteralPath $SRC)) { throw "SRC not found: $SRC" }
 
-Write-Host "[build] $Cxx $($CFLAGS -join ' ') `"$SRC`" -o `"$EXE`" $($LFLAGS -join ' ')"
+# CFLAGS / LFLAGS must be set *before* this block:
+# $CFLAGS = $COMMON + ($(if($Release){$REL}else{$DBG}))
+# $LFLAGS = @() ; if ($needFs) { $LFLAGS += "-lstdc++fs" }
+
+$cmdLine = @($Cxx) + $CFLAGS + @($SRC, "-o", $EXE) + $LFLAGS
+Write-Host "[build] $($cmdLine -join ' ')"
+
 & $Cxx @CFLAGS $SRC "-o" $EXE @LFLAGS
+if ($LASTEXITCODE -ne 0) { throw "g++ failed with exit code $LASTEXITCODE" }
+
 Write-Host "[build] ok -> $EXE"
+
 
 # ---- Stage runtime folders -------------------------------------------------
 Write-Host "[stage] plugins -> $(Join-Path $OUT 'plugins')"
