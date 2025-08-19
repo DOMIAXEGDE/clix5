@@ -1,0 +1,8 @@
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser -Force
+
+Usage
+
+.\build.ps1 -Release -Run          # C++23, static runtime (default)
+.\build.ps1 -Std c++20 -Run        # C++20
+.\build.ps1 -Release -Run -Static:$false   # dynamic runtime
+.\build.ps1 -Clean
