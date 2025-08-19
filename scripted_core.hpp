@@ -393,36 +393,39 @@ struct Resolver {
             out.append(s, last, string::npos);
             s.swap(out);
         }
-        {   // three-part numeric: b.r.a
-            static std::regex tri(R"((\d+)\.(\d+)\.(\d+))");
+
+        {   // same-bank shorthand: r<reg>.<addr> (uses currentBank)
+            static std::regex same(R"(r([0-9A-Za-z]+)\.([0-9A-Za-z]+))");
             std::smatch m; string out; out.reserve(s.size());
-            string::const_iterator searchStart( s.cbegin() ); size_t last = 0;
-            while (std::regex_search(searchStart, s.cend(), m, tri)) {
+            string::const_iterator searchStart(s.cbegin()); size_t last = 0;
+            while (std::regex_search(searchStart, s.cend(), m, same)) {
                 size_t pos = m.position(0) + (searchStart - s.cbegin());
                 size_t len = m.length(0);
                 out.append(s, last, pos - last);
-                long long b = std::stoll(m[1].str());
-                long long r = std::stoll(m[2].str());
-                long long a = std::stoll(m[3].str());
-                string key = std::to_string(b)+"."+std::to_string(r)+"."+std::to_string(a);
-                if (visited.count(key)) out += "[Circular Ref: " + m[0].str() + "]";
-                else {
-                    string v;
-                    if (!getValue(b, r, a, v)) out += "[Missing " + m[0].str() + "]";
-                    else { auto v2=visited; v2.insert(key); out += resolve(v, b, v2); }
+                long long r=0,a=0;
+                if (!parseIntBase(m[1].str(), cfg.base, r) || !parseIntBase(m[2].str(), cfg.base, a)) {
+                    out += "[BadRef " + m[0].str() + "]";
+                } else {
+                    string key = std::to_string(currentBank) + "." + std::to_string(r) + "." + std::to_string(a);
+                    if (visited.count(key)) out += "[Circular Ref: " + m[0].str() + "]";
+                    else { string v; if (!getValue(currentBank,r,a,v)) out += "[Missing " + m[0].str() + "]";
+                        else { auto v2=visited; v2.insert(key); out += resolve(v, currentBank, v2); } }
                 }
                 searchStart = s.cbegin() + pos + len; last = pos + len;
             }
-            out.append(s, last, string::npos);
-            s.swap(out);
+            out.append(s, last, string::npos); s.swap(out);
         }
+        
 
         // place BEFORE the current two-part prefixed block
 
         {   // prefixed three-part: x<bank>.<reg>.<addr>  (base-aware)
             // NOTE: built from cfg.prefix, so only matches your configured prefix.
+            //const std::regex pref3(
+            //    std::string(1, cfg.prefix) + R"(([0-9a-zA-Z]+)\.([0-9a-zA-Z]+)\.([0-9a-zA-Z]+))"
+            //);
             const std::regex pref3(
-                std::string(1, cfg.prefix) + R"(([\da-zA-Z]+)\.([\da-zA-Z]+)\.([\da-zA-Z]+))"
+                std::string(1, cfg.prefix) + R"(([0-9A-Za-z]+)\.([0-9A-Za-z]+)\.([0-9A-Za-z]+))"
             );
 
             std::smatch m;
@@ -467,37 +470,16 @@ struct Resolver {
             s.swap(out);
         }
 
-
-        {   // same-bank shorthand: r<reg>.<addr> (uses currentBank)
-            static std::regex same(R"(r([0-9A-Za-z]+)\.([0-9A-Za-z]+))");
-            std::smatch m; string out; out.reserve(s.size());
-            string::const_iterator searchStart(s.cbegin()); size_t last = 0;
-            while (std::regex_search(searchStart, s.cend(), m, same)) {
-                size_t pos = m.position(0) + (searchStart - s.cbegin());
-                size_t len = m.length(0);
-                out.append(s, last, pos - last);
-                long long r=0,a=0;
-                if (!parseIntBase(m[1].str(), cfg.base, r) || !parseIntBase(m[2].str(), cfg.base, a)) {
-                    out += "[BadRef " + m[0].str() + "]";
-                } else {
-                    string key = std::to_string(currentBank) + "." + std::to_string(r) + "." + std::to_string(a);
-                    if (visited.count(key)) out += "[Circular Ref: " + m[0].str() + "]";
-                    else { string v; if (!getValue(currentBank,r,a,v)) out += "[Missing " + m[0].str() + "]";
-                        else { auto v2=visited; v2.insert(key); out += resolve(v, currentBank, v2); } }
-                }
-                searchStart = s.cbegin() + pos + len; last = pos + len;
-            }
-            out.append(s, last, string::npos); s.swap(out);
-        }
-        
-
         {   // two-part prefixed: x<bank>.<addr>
-            static std::regex two(R"(([A-Za-z])([0-9A-Za-z]+)\.([0-9A-Za-z]+))");
+            //static std::regex two(R"(([A-Za-z])([0-9A-Za-z]+)\.([0-9A-Za-z]+))");
+            // was: R"(([A-Za-z])([0-9A-Za-z]+)\.([0-9A-Za-z]+))"
+            static std::regex two(R"(([A-Za-z])([0-9A-Za-z]+)\.([0-9A-Za-z]+)(?!\.))");
             std::smatch m; string out; out.reserve(s.size());
             string::const_iterator searchStart( s.cbegin() ); size_t last = 0;
             while (std::regex_search(searchStart, s.cend(), m, two)) {
                 size_t pos = m.position(0) + (searchStart - s.cbegin());
                 size_t len = m.length(0);
+
                 out.append(s, last, pos - last);
                 char pf = m[1].str()[0];
                 if (pf != cfg.prefix) out += m[0].str();
@@ -520,6 +502,43 @@ struct Resolver {
             out.append(s, last, string::npos);
             s.swap(out);
         }
+
+        {   // three-part numeric: b.r.a
+            static std::regex tri(R"((\d+)\.(\d+)\.(\d+))");
+            std::smatch m; string out; out.reserve(s.size());
+            string::const_iterator searchStart( s.cbegin() ); size_t last = 0;
+            while (std::regex_search(searchStart, s.cend(), m, tri)) {
+                size_t pos = m.position(0) + (searchStart - s.cbegin());
+                size_t len = m.length(0);
+                // inside the triad while-loop, after you compute `pos`/`len`:
+                if (pos > 0) {
+                    char prev = s[ pos - 1 ];
+                    if (std::isalnum(static_cast<unsigned char>(prev))) {
+                        // leave this occurrence unchanged; copy it through
+                        out.append(s, last, pos - last);     // up to the match
+                        out.append(s, pos, len);             // the matched digits/dots
+                        searchStart = s.cbegin() + pos + len;
+                        last = pos + len;
+                        continue;
+                    }
+                }
+                out.append(s, last, pos - last);
+                long long b = std::stoll(m[1].str());
+                long long r = std::stoll(m[2].str());
+                long long a = std::stoll(m[3].str());
+                string key = std::to_string(b)+"."+std::to_string(r)+"."+std::to_string(a);
+                if (visited.count(key)) out += "[Circular Ref: " + m[0].str() + "]";
+                else {
+                    string v;
+                    if (!getValue(b, r, a, v)) out += "[Missing " + m[0].str() + "]";
+                    else { auto v2=visited; v2.insert(key); out += resolve(v, b, v2); }
+                }
+                searchStart = s.cbegin() + pos + len; last = pos + len;
+            }
+            out.append(s, last, string::npos);
+            s.swap(out);
+        }
+
         return s;
     }
 };
