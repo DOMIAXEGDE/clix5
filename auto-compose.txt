@@ -1,0 +1,3 @@
+python compose.py --parent D:\domalecs-os\clix5\bin\files\out\plugins\x99600 --cache-dir D:\domalecs-os\clix5\projects\cache
+python compose.py --commit --cache-dir D:\domalecs-os\clix5\projects\cache --new-ext .py
+python compose.py --parse --cache-dir D:\domalecs-os\clix5\projects\cache --rules D:\domalecs-os\clix5\projects\rules.json

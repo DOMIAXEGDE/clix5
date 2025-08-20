@@ -81,3 +81,23 @@
 :resolve
 :export
 :q
+
+--- composer USAGE
+
+# Discover and cache
+python compose.py --parent D:\projects\plugins --cache-dir D:\projects\cache
+
+# Commit cached files
+python compose.py --commit --cache-dir D:\projects\cache --new-ext .py
+
+# Parse aggregate.txt
+python compose.py --parse --cache-dir D:\projects\cache --rules D:\projects\rules.json
+
+
+rules.json formatting: ...
+{
+  "\\n": "\n",
+  "\\t": "\t",
+  "{{DATE}}": "2025-08-20",
+  "{{AUTHOR}}": "DOMINIC"
+}
