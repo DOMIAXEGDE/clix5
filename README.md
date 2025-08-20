@@ -37,6 +37,8 @@ A fast, minimal, **file-backed** C++23 CLI for structured “banks” of registe
 │  └─ plugins\                  # working plugins (at runtime)
 ├─ smoke.ps1                    # resolver smoke test
 └─ plugin-smoke.ps1             # plugin pipeline smoke test
+├─ parse_text.py                # parse your composed code or composed text file
+└─ compose.py                   # compose a code file automatically (line-by-line)
 ```
 
 ---
@@ -542,4 +544,5 @@ This script is modular and ready for enhancements:
 - Runtime menu support
 - Manifest logging
 - Interactive folder previews
+
 - Integration with snippet caching or versioning tools
