@@ -1,3 +1,5 @@
+--- CLI Sequence 0
+
 :open x00001
 :switch x00001
 :ins 0001 print("hello Dominic :)")
@@ -8,7 +10,7 @@
 :show
 :q
 
----
+--- CLI Sequence 1
 
 :preload
 :switch x00001
@@ -19,4 +21,63 @@
 :export
 :r files/out/x00001.resolved.txt
 :show
+:q
+
+--- CLI Sequence 2
+
+:preload
+:open x99600
+:switch x99600
+:ins 0001 import tkinter as tk
+:ins 0002 root=tk_dott_Tk(); root_dott_title("Move the Square")
+:ins 0003 c=tk.Canvas(root,width=500,height=400,bg="white"); c.pack()
+:ins 0004 size=40; rect=c.create_rectangle(230,180,230+size,180+size,fill="dodgerblue")
+:ins 0005 mv=lambda dx,dy:(c.move(rect,dx,dy),c.update())
+:ins 0006 root_dott_bind("<Left>",lambda e:mv(-10,0)); root_dott_bind("<Right>",lambda e:mv(10,0))
+:ins 0007 root_dott_bind("<Up>",lambda e:mv(0,-10)); root_dott_bind("<Down>",lambda e:mv(0,10))
+:ins 0008 root_dott_bind("q",lambda e:root_dott_destroy())
+:ins 0009 root_dott_mainloop()
+:w
+:resolve
+:export
+:ins 0010 x99600.01.0001
+:plugin_run python 01 0010 {}
+:ins 0011 x99600.01.0002
+:plugin_run python 01 0011 {}
+:ins 0012 x99600.01.0003
+:plugin_run python 01 0012 {}
+:ins 0013 x99600.01.0004
+:plugin_run python 01 0013 {}
+:ins 0014 x99600.01.0005
+:plugin_run python 01 0014 {}
+:ins 0015 x99600.01.0006
+:plugin_run python 01 0015 {}
+:ins 0016 x99600.01.0007
+:plugin_run python 01 0016 {}
+:ins 0017 x99600.01.0008
+:plugin_run python 01 0017 {}
+:ins 0018 x99600.01.0009
+:plugin_run python 01 0018 {}
+:ins 0019 @file(out/plugins/x99600/r01a0010/python/code.txt)\n@file(out/plugins/x99600/r01a0011/python/code.txt)\n@file(out/plugins/x99600/r01a0012/python/code.txt)\n@file(out/plugins/x99600/r01a0013/python/code.txt)\n@file(out/plugins/x99600/r01a0014/python/code.txt)\n@file(out/plugins/x99600/r01a0015/python/code.txt)\n@file(out/plugins/x99600/r01a0016/python/code.txt)\n@file(out/plugins/x99600/r01a0017/python/code.txt)\n@file(out/plugins/x99600/r01a0018/python/code.txt)
+:w
+:resolve
+:export
+:plugin_run python 01 0019 {}
+:w
+:resolve
+:export
+:ins 0020 @file(out/plugins/x99600/r01a0019/python/code.txt)
+:w
+:resolve
+:export
+:plugin_run python 01 0020 {}
+:w
+:resolve
+:export
+:show
+:ins 0021 __import__('subprocess').run(['python', input('Enter absolute path to .py file: ')])
+:plugin_run python 01 0021 {}
+:w
+:resolve
+:export
 :q

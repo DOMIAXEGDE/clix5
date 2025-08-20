@@ -410,3 +410,7 @@ Choose one (MIT / Apache-2.0 / BSD-3-Clause). Add `LICENSE` accordingly.
 * `r<reg>.<addr>` (same bank)
 * `x<bank>.<addr>` (reg 01)
 * `<bank>.<reg>.<addr>`
+
+---
+
+If you want this README saved into your repo, say the word and I’ll paste it into a `README.md`-ready block you can drop in immediately.
