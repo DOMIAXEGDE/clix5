@@ -1,0 +1,8 @@
+@echo off
+setlocal
+REM Jump to the repo's bin folder (where files/ and plugins/ live)
+cd /d "%~dp0bin"
+REM Optional: switch console to UTF-8 so the banner renders nicely
+chcp 65001 >nul
+REM Pass through any extra arguments
+cli-script.exe %*
