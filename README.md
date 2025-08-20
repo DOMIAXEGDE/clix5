@@ -413,4 +413,133 @@ Choose one (MIT / Apache-2.0 / BSD-3-Clause). Add `LICENSE` accordingly.
 
 ---
 
-If you want this README saved into your repo, say the word and I’ll paste it into a `README.md`-ready block you can drop in immediately.
+Here’s your full **README.md** for `compose.py`, DOMINIC — tailored for clarity, precision, and extensibility. It includes setup, usage, base specification, and examples. You can drop this straight into your repo.
+
+---
+
+# 🧠 compose.py — Register-Address Code Aggregator
+
+`compose.py` is a modular Python script designed to filter and aggregate `code.txt` files from folders named using a register-address pattern (`rXXaYYYY`). It supports flexible filtering by register, address range, and numerical base — making it ideal for structured code aggregation workflows.
+
+---
+
+## 📁 Folder Naming Convention
+
+Each folder must follow this format:
+
+```
+rXXaYYYY/
+├── code.txt
+```
+
+- `rXX` → Register segment (e.g. `r01`, `rA9`)
+- `aYYYY` → Address segment (e.g. `a0010`, `aZZ10`)
+
+---
+
+## 🚀 Features
+
+- ✅ Filter by register (e.g. `r01`, `rA9`)
+- ✅ Filter by address range per register
+- ✅ Specify numerical base for register and address segments
+- ✅ Aggregate matching `code.txt` files into a single output
+- ✅ CLI interface for automation and scripting
+
+---
+
+## 🔧 Installation
+
+No external dependencies required.
+
+```bash
+git clone <your-repo>
+cd <your-repo>
+python compose.py --help
+```
+
+---
+
+## 🧩 CLI Usage
+
+```bash
+python compose.py \
+  --parent <root folder> \
+  --cache-dir <output folder> \
+  --registers <rXX rYY ...> \
+  --range <rXX:start-end rYY:start-end ...> \
+  --reg-base <base for rXX> \
+  --addr-base <base for aYYYY> \
+  --output <filename>
+```
+
+---
+
+## 🔢 Base Specification Guide
+
+Use `--reg-base` and `--addr-base` to define how register and address segments are interpreted.
+
+| Base | Characters Used     | Description             |
+|------|----------------------|-------------------------|
+| 10   | `0-9`                | Decimal                 |
+| 16   | `0-9, A-F`           | Hexadecimal             |
+| 36   | `0-9, A-Z`           | Alphanumeric (uppercase)|
+| 62   | `0-9, A-Z, a-z`      | Full alphanumeric       |
+
+---
+
+## 🧪 Examples
+
+### Example 1: Decimal Register, Hex Address
+
+```bash
+python compose.py --parent D:\plugins --cache-dir D:\cache \
+--registers r01 r02 --range r01:0010-0015 \
+--reg-base 10 --addr-base 16
+```
+
+### Example 2: Base-36 Register, Base-36 Address
+
+```bash
+python compose.py --parent D:\plugins --cache-dir D:\cache \
+--registers rA9 rB2 --range rA9:ZZ00-ZZ10 \
+--reg-base 36 --addr-base 36
+```
+
+### Example 3: Base-62 Address (Full Alphanumeric)
+
+```bash
+python compose.py --parent D:\plugins --cache-dir D:\cache \
+--registers r01 --range r01:0aZ-1bY \
+--reg-base 10 --addr-base 62
+```
+
+---
+
+## 📄 Output
+
+All matching `code.txt` files are aggregated into a single file:
+
+```
+<cache-dir>/<output>.txt
+```
+
+Default output filename: `composed.txt`
+
+---
+
+## ⚠️ Notes
+
+- Folder names must follow the format `rXXaYYYY`
+- Register and address segments are parsed **after** the `r` and `a` prefixes
+- Ranges must match the specified base exactly
+- Case sensitivity matters in base-62: `a`, `A`, and `1` are distinct
+
+---
+
+## 🛠️ Extensibility
+
+This script is modular and ready for enhancements:
+- Runtime menu support
+- Manifest logging
+- Interactive folder previews
+- Integration with snippet caching or versioning tools

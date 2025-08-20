@@ -84,20 +84,23 @@
 
 --- composer USAGE
 
-# Discover and cache
-python compose.py --parent D:\projects\plugins --cache-dir D:\projects\cache
+python compose.py --parent D:\domalecs-os\clix5\bin\files\out\plugins\x99600 --cache-dir D:\domalecs-os\clix5\projects\cache --registers r01 --range r01:0010-0018 --reg-base 10 --addr-base 10 --output final.txt --verbose
 
-# Commit cached files
-python compose.py --commit --cache-dir D:\projects\cache --new-ext .py
+--- text_parser.py USAGE
 
-# Parse aggregate.txt
-python compose.py --parse --cache-dir D:\projects\cache --rules D:\projects\rules.json
+python parse_text.py --input D:\cache\composed.txt --parser parser.json --output-dir D:\parsed
 
-
-rules.json formatting: ...
+paser.json formatting: ...
 {
-  "\\n": "\n",
-  "\\t": "\t",
-  "{{DATE}}": "2025-08-20",
-  "{{AUTHOR}}": "DOMINIC"
+  "transform": {
+    "strip_whitespace": false,
+    "uppercase": false,
+    "replace": {
+      "_dott_": ".",
+      "\\n": "\n",
+      "\\t": "\t"
+    }
+  },
+  "output_name": "code1",
+  "output_extension": ".py"
 }

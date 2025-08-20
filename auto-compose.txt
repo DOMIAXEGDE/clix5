@@ -1,3 +1,2 @@
-python compose.py --parent D:\domalecs-os\clix5\bin\files\out\plugins\x99600 --cache-dir D:\domalecs-os\clix5\projects\cache
-python compose.py --commit --cache-dir D:\domalecs-os\clix5\projects\cache --new-ext .py
-python compose.py --parse --cache-dir D:\domalecs-os\clix5\projects\cache --rules D:\domalecs-os\clix5\projects\rules.json
+python compose.py --parent D:\domalecs-os\clix5\bin\files\out\plugins\x99600 --cache-dir D:\domalecs-os\clix5\projects\cache --registers r01 --range r01:0010-0018 --reg-base 10 --addr-base 10 --output final.txt --verbose
+python parse_text.py --input D:\domalecs-os\clix5\projects\cache\final.txt --parser D:\domalecs-os\clix5\projects\parser.json --output-dir \domalecs-os\clix5\parsed-code
