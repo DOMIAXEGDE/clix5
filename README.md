@@ -1,3 +1,7 @@
+> A file-backed C++23 programming engine with REPL, cross-references, and a pluggable code execution pipeline — built for composing entire systems of codebases.
+
+> clix5 — A programmable fabric where codebases speak, evolve, and compose into living systems.
+
 # CLI Scripted Kernel — Extreme C++23 File-Backed Workflow
 
 A fast, minimal, **file-backed** C++23 CLI for structured “banks” of registers/addresses, with a **pluggable code-plugin system**. Everything flows through plain **`.txt`** and **`.json`** files so you can version, diff, test, and automate without opaque binaries.
@@ -546,3 +550,117 @@ This script is modular and ready for enhancements:
 - Interactive folder previews
 
 - Integration with snippet caching or versioning tools
+
+# UPDATE
+
+Perfect. Your current `README.md` already documents the system well, but I’ll enhance it to **capture the full power of clix5** so you’ll always remember what this programming engine is capable of. I’ll merge in the structured guide from your scripted prompt run and highlight its unique strengths.
+
+Here’s my proposed update (replacement for your current README.md):
+
+---
+
+# CLI Scripted Kernel (clix5) — Extreme C++23 File-Backed Programming Engine
+
+A fast, **C++23 single-binary CLI** that treats programming as a structured file-backed workflow.
+It manages **banks of registers and addresses** with a deterministic text format, a **cross-reference resolver**, and a **pluggable code execution system**.
+All data lives in **plain `.txt` and `.json` files** so you can version, diff, and compose them with zero opacity.
+
+---
+
+## 🚀 Why This Matters
+
+clix5 isn’t just a toy CLI — it’s a **programming engine**:
+
+* **File-backed persistence** — all states are plain-text, reproducible, and auditable.
+* **Cross-reference resolution** — values can reference any other bank, register, or file.
+* **Plugin architecture** — execute arbitrary external programs (Python, C++, Bash, batch) as cells.
+* **Composable pipelines** — aggregate and transform snippets using `compose.py` and `parse_text.py`.
+* **Deterministic exports** — always reproducible: `.resolved.txt` + `.json` snapshots.
+* **UTF-8 / Unicode safe** — designed for modern text.
+* **Build once, run everywhere** — g++23 builds in seconds, PowerShell scripts handle staging.
+
+This makes clix5 a platform for **structured software construction, experimentation, and automation**.
+
+---
+
+## 🗂 Repository Layout
+
+```
+.
+├─ build.ps1           # Build/stage helper
+├─ clix.cmd            # Wrapper: launches CLI in bin\
+├─ scripted.cpp        # CLI entrypoint
+├─ scripted_core.hpp   # Data model + parser/resolver
+├─ scripted_kernel.hpp # Plugin execution kernel
+├─ files\              # Source contexts (banks)
+│  └─ out\             # Resolved outputs
+├─ plugins\            # Plugin definitions
+│  └─ python\
+│     ├─ plugin.json
+│     ├─ run.bat
+│     └─ run.sh
+├─ bin\                # Build output (cli-script.exe + staged files/plugins)
+├─ parse_text.py       # Text transformation engine
+└─ compose.py          # Code aggregator
+```
+
+---
+
+## 🛠 Core Workflow
+
+### 1. Build
+
+```powershell
+cd D:\domalecs-os\clix5
+.\build.ps1 -Release
+```
+
+### 2. Run CLI
+
+```powershell
+clix
+:help
+```
+
+### 3. Work with Contexts
+
+```text
+:open x00001
+:ins 0001 print("hello")
+:w
+:resolve
+:export
+```
+
+### 4. Run Plugins
+
+```text
+:plugins
+:plugin_run python 01 0001 {}
+```
+
+### 5. Compose & Transform
+
+```bash
+python compose.py --parent plugins --cache-dir cache --registers r01 --range r01:0010-0018 --output composed.txt
+python parse_text.py --input cache/composed.txt --parser parser.json --output-dir parsed/
+```
+
+---
+
+## 🔑 Key Features Recap
+
+1. **Deterministic file format** — bank/register/address layout.
+2. **Resolver system** — expands references (`@file(...)`, `x00001.01.0001`, etc).
+3. **Plugin kernel** — language-agnostic execution with strict I/O contracts.
+4. **Pipeline scripts** — `compose.py` and `parse_text.py` extend functionality.
+5. **Human-readable artifacts** — everything is `.txt` or `.json`.
+6. **CI-ready** — smoke tests included.
+
+---
+
+## 🌍 Philosophy
+
+> “Think first, compute later.”
+> clix5 forces deliberate construction: everything is slow, explicit, file-backed.
+> This makes it safe, auditable, and ideal for **serious programming experiments**.
