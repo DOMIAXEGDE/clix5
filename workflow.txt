@@ -1,0 +1,6 @@
+clix	# programming engine
+
+python parse_text.py
+python compose.py	## make assemble the clix code into an executable
+
+claude-cix5p -File D:\domalecs-os\clix5\prompt.txt
